@@ -61,13 +61,26 @@ def is_engine_available(**kwargs):
 
     # Attempt to import natlink.
     try:
+        import sys, os
         import natlink
-    except ImportError as e:
-        _log.warning("Requested engine 'natlink' is not available: Natlink "
-                     "is not installed: %s", e)
-        return False
+    except ImportError:
+        # Adjust coredir path if necessary to NatLink core Directory
+        coredir = 'C:\\NatLink\\NatLink\\MacroSystem\\core'
+        if os.path.isdir(coredir):
+            _log.warning(" First attempt to import NatLink failed.\n"
+                         "Attempting to temporarily add NatLink to path: %s", coredir)
+            sys.path.append(coredir)
+        else:
+            _log.warning(" NatLink path does not exist:\n %s", coredir)
+        try:
+            import natlink
+        except ImportError as e:
+            _log.warning(" All attempts to import NatLink failed!\n"
+                         "Requested engine 'NatLink' is not available\n"
+                         "NatLink is not installed: %s", e)
+            return False
     except Exception as e:
-        _log.exception("Exception during import of natlink package: "
+        _log.exception(" Exception during import of natlink package: "
                        "%s", e)
         return False
 
