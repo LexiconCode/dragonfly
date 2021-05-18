@@ -6,7 +6,7 @@ library independent of Dragonfly.
 """
 
 
-import regex
+import re
 import enum
 import logging
 
@@ -83,7 +83,7 @@ class TextInfo(object):
 def _phrase_to_regex(phrase):
     # Treat whitespace between words as meaning anything other than alphanumeric
     # characters.
-    pattern = r"[^\w--_]+".join(regex.escape(word) for word in phrase.split())
+    pattern = r"[^\w]+".join(re.escape(word) for word in phrase.split())
     # Treat spaces at the beginning or end of the phrase as matching any
     # whitespace character. This makes it easy to select stuff like non-breaking
     # space, which occurs frequently in browsers.
@@ -99,10 +99,10 @@ def _phrase_to_regex(phrase):
             pattern = pattern + r"\s"
     # Only match at boundaries of alphanumeric sequences if the phrase ends
     # are alphanumeric.
-    if regex.search(r"^[\w--_]", phrase, regex.VERSION1 | regex.UNICODE):
-        pattern = r"(?<![\w--_])" + pattern
-    if regex.search(r"[\w--_]$", phrase, regex.VERSION1 | regex.UNICODE):
-        pattern = pattern + r"(?![\w--_])"
+    if re.search(r"^[\w]", phrase, re.UNICODE):
+        pattern = r"(?<![\w])" + pattern
+    if re.search(r"[\w]$", phrase, re.UNICODE):
+        pattern = pattern + r"(?![\w])"
     return pattern
 
 
@@ -119,11 +119,11 @@ def _find_text(query, expanded_text, cursor_offset):
         if query.start_relative_phrase and query.start_relative_position == CursorPosition.AFTER:
             pattern += _phrase_to_regex(query.start_relative_phrase)
             if query.start_phrase:
-                pattern += r"[^\w--_]*"
+                pattern += r"[^\w]*"
         pattern += r"(" + _phrase_to_regex(query.start_phrase)
         if query.start_relative_phrase and query.start_relative_position == CursorPosition.BEFORE:
             if query.start_phrase:
-                pattern += r"[^\w--_]*"
+                pattern += r"[^\w]*"
             pattern += _phrase_to_regex(query.start_relative_phrase)
         pattern += r".*?"
 
@@ -131,21 +131,21 @@ def _find_text(query, expanded_text, cursor_offset):
     if query.end_relative_phrase and query.end_relative_position == CursorPosition.AFTER:
         pattern += _phrase_to_regex(query.end_relative_phrase)
         if query.end_phrase:
-            pattern += r"[^\w--_]*"
+            pattern += r"[^\w]*"
     # Add the initial "(" if we haven't already.
     if not (query.start_phrase or query.start_relative_phrase):
         pattern += r"("
     pattern += _phrase_to_regex(query.end_phrase) + r")"
     if query.end_relative_phrase and query.end_relative_position == CursorPosition.BEFORE:
         if query.end_phrase:
-            pattern += r"[^\w--_]*"
+            pattern += r"[^\w]*"
         pattern += _phrase_to_regex(query.end_relative_phrase)
 
     # Find all matches.
-    matches = regex.finditer(pattern,
-                             expanded_text,
-                             regex.IGNORECASE | regex.VERSION1 | regex.UNICODE,
-                             overlapped=True)
+    # TODO Support overlapping matches again, just using re this time.
+    matches = re.finditer(pattern,
+                          expanded_text,
+                          re.IGNORECASE | re.UNICODE)
     ranges = [(match.start(1), match.end(1)) for match in matches]
     if not ranges:
         _log.warning("Not found: %s" % query)

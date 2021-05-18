@@ -78,6 +78,7 @@ class AccessibilityTestCase(unittest.TestCase):
                                utils.TextQuery(start_phrase="dog", through=True, end_relative_position=utils.CursorPosition.BEFORE, end_relative_phrase="tiger"),
                                "dog elephant tigers tiger")
         # Test that we find the nearest overlapping match.
+        # FIXME
         self.assert_found_text("dog elephant",
                                utils.TextQuery(start_phrase="dog", through=True, end_phrase="elephant"),
                                "dog dog elephant",
